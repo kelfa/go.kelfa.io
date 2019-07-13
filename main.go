@@ -19,6 +19,7 @@ var conversions = []conversion{
 	conversion{Domain: "go.kelfa.io", Vanity: "aws-cloudfront-logCompactor", Real: "https://github.com/kelfa/aws-cloudfront-logCompactor"},
 	conversion{Domain: "go.kelfa.io", Vanity: "elf", Real: "https://github.com/kelfa/elf"},
 	conversion{Domain: "go.kelfa.io", Vanity: "go.kelfa.io", Real: "https://github.com/kelfa/go.kelfa.io"},
+	conversion{Domain: "go.kelfa.io", Vanity: "kelfa", Real: "https://github.com/kelfa/kelfa"},
 }
 
 var tpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
