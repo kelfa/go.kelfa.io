@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"html/template"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -16,26 +15,6 @@ type conversion struct {
 	Real   string
 }
 
-var conversions = []conversion{
-	conversion{
-		Domain: "go.kelfa.io",
-		Vanity: "aws-cloudfront-logCompactor",
-		Prefix: "aws-cloudfront-logCompactor",
-		Real:   "https://github.com/kelfa/aws-cloudfront-logCompactor",
-	},
-	conversion{
-		Domain: "go.kelfa.io",
-		Vanity: "elf",
-		Prefix: "elf",
-		Real:   "https://github.com/kelfa/elf",
-	},
-	conversion{
-		Domain: "go.kelfa.io",
-		Vanity: "kelfa",
-		Prefix: "kelfa",
-		Real:   "https://github.com/kelfa/kelfa",
-	},
-}
 var catchAll = conversion{
 	Domain: "go.kelfa.io",
 	Real:   "https://github.com/kelfa/kelfa",
@@ -45,30 +24,18 @@ var tpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta name="go-import" content="{{ .Domain }}{{ if .Prefix }}/{{ end }}{{ .Prefix }} git {{ .Real }}">
+        <meta name="go-import" content="{{ .Domain }} git {{ .Real }}">
     </head>
 </html>
 `))
 
 // Handler function Using AWS Lambda Proxy Request
 func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	for _, c := range conversions {
-		if request.Path[1:] == c.Vanity || strings.HasPrefix(request.Path[1:], c.Vanity+"/") {
-			var tplOutput bytes.Buffer
-			if err := tpl.Execute(&tplOutput, c); err != nil {
-				return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
-			}
-			return events.APIGatewayProxyResponse{Body: tplOutput.String(), StatusCode: 200}, nil
-		}
+	var tplOutput bytes.Buffer
+	if err := tpl.Execute(&tplOutput, catchAll); err != nil {
+		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
-	if len(catchAll.Domain) != 0 {
-		var tplOutput bytes.Buffer
-		if err := tpl.Execute(&tplOutput, catchAll); err != nil {
-			return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
-		}
-		return events.APIGatewayProxyResponse{Body: tplOutput.String(), StatusCode: 200}, nil
-	}
-	return events.APIGatewayProxyResponse{Body: "Not found", StatusCode: 404}, nil
+	return events.APIGatewayProxyResponse{Body: tplOutput.String(), StatusCode: 200}, nil
 }
 
 func main() {
