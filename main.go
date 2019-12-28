@@ -10,23 +10,42 @@ import (
 )
 
 type conversion struct {
-	Vanity string
-	Real   string
 	Domain string
+	Vanity string
+	Prefix string
+	Real   string
 }
 
 var conversions = []conversion{
-	conversion{Domain: "go.kelfa.io", Vanity: "aws-cloudfront-logCompactor", Real: "https://github.com/kelfa/aws-cloudfront-logCompactor"},
-	conversion{Domain: "go.kelfa.io", Vanity: "elf", Real: "https://github.com/kelfa/elf"},
-	conversion{Domain: "go.kelfa.io", Vanity: "go.kelfa.io", Real: "https://github.com/kelfa/go.kelfa.io"},
-	conversion{Domain: "go.kelfa.io", Vanity: "kelfa", Real: "https://github.com/kelfa/kelfa"},
+	conversion{
+		Domain: "go.kelfa.io",
+		Vanity: "aws-cloudfront-logCompactor",
+		Prefix: "aws-cloudfront-logCompactor",
+		Real:   "https://github.com/kelfa/aws-cloudfront-logCompactor",
+	},
+	conversion{
+		Domain: "go.kelfa.io",
+		Vanity: "elf",
+		Prefix: "elf",
+		Real:   "https://github.com/kelfa/elf",
+	},
+	conversion{
+		Domain: "go.kelfa.io",
+		Vanity: "kelfa",
+		Prefix: "kelfa",
+		Real:   "https://github.com/kelfa/kelfa",
+	},
+}
+var catchAll = conversion{
+	Domain: "go.kelfa.io",
+	Real:   "https://github.com/kelfa/kelfa",
 }
 
 var tpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta name="go-import" content="{{ .Domain }}/{{ .Vanity }} git {{ .Real }}">
+        <meta name="go-import" content="{{ .Domain }}{{ if .Prefix }}/{{ end }}{{ .Prefix }} git {{ .Real }}">
     </head>
 </html>
 `))
@@ -41,6 +60,13 @@ func Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 			}
 			return events.APIGatewayProxyResponse{Body: tplOutput.String(), StatusCode: 200}, nil
 		}
+	}
+	if len(catchAll.Domain) != 0 {
+		var tplOutput bytes.Buffer
+		if err := tpl.Execute(&tplOutput, catchAll); err != nil {
+			return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
+		}
+		return events.APIGatewayProxyResponse{Body: tplOutput.String(), StatusCode: 200}, nil
 	}
 	return events.APIGatewayProxyResponse{Body: "Not found", StatusCode: 404}, nil
 }
